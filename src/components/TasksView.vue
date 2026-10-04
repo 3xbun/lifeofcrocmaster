@@ -6,43 +6,43 @@
         <DataTable :value="tasks" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" removableSort
           class="custom-table">
           <!-- Date Column -->
-          <Column field="Date" header="Date" sortable style="width: 25%">
-            <template #body="slotProps">
-              <span class="table-date">
-                <i class="fa-duotone fa-solid fa-calendar icon-dim"></i>
-                {{ formatDate(slotProps.data.Date) }}
-              </span>
-            </template>
-          </Column>
+                    <Column field="fields.Date" header="Date" sortable style="width: 25%">
+                      <template #body="slotProps">
+                        <span class="table-date">
+                          <i class="fa-duotone fa-solid fa-calendar icon-dim"></i>
+                          {{ formatDate(slotProps.data.fields?.Date) }}
+                        </span>
+                      </template>
+                    </Column>
 
-          <!-- Start Time Column -->
-          <Column field="StartTime" header="Start Time" sortable style="width: 20%">
-            <template #body="slotProps">
-              <span class="table-time">
-                <i class="fa-duotone fa-solid fa-clock icon-dim"></i>
-                {{ getTimeValue(slotProps.data, "start") }}
-              </span>
-            </template>
-          </Column>
+                    <!-- Start Time Column -->
+                    <Column field="fields.StartTime" header="Start Time" sortable style="width: 20%">
+                      <template #body="slotProps">
+                        <span class="table-time">
+                          <i class="fa-duotone fa-solid fa-clock icon-dim"></i>
+                          {{ getTimeValue(slotProps.data, "start") }}
+                        </span>
+                      </template>
+                    </Column>
 
-          <!-- End Time Column -->
-          <Column field="EndTime" header="End Time" sortable style="width: 20%">
-            <template #body="slotProps">
-              <span class="table-time">
-                <i class="fa-duotone fa-solid fa-clock icon-dim"></i>
-                {{ getTimeValue(slotProps.data, "end") }}
-              </span>
-            </template>
-          </Column>
+                    <!-- End Time Column -->
+                    <Column field="fields.EndTime" header="End Time" sortable style="width: 20%">
+                      <template #body="slotProps">
+                        <span class="table-time">
+                          <i class="fa-duotone fa-solid fa-clock icon-dim"></i>
+                          {{ getTimeValue(slotProps.data, "end") }}
+                        </span>
+                      </template>
+                    </Column>
 
-          <!-- Title/Booking Name Column -->
-          <Column field="Title" header="Booking Details" sortable style="width: 35%">
-            <template #body="slotProps">
-              <span class="table-title" :class="{ 'cancelled-title': isCancelledTask(slotProps.data) }">
-                {{ slotProps.data.Title }}
-              </span>
-            </template>
-          </Column>
+                    <!-- Title/Booking Name Column -->
+                    <Column field="fields.Title" header="Booking Details" sortable style="width: 35%">
+                      <template #body="slotProps">
+                        <span class="table-title" :class="{ 'cancelled-title': isCancelledTask(slotProps.data) }">
+                          {{ slotProps.data.fields?.Title }}
+                        </span>
+                      </template>
+                    </Column>
 
           <!-- Category/Type Column -->
           <Column header="Category" style="width: 20%">
@@ -87,34 +87,36 @@ const formatDate = (dateStr) => {
 };
 
 const isCancelledTask = (task) => {
-  return Boolean(task?.Title && task.Title.trim().endsWith("(CC)"));
+  return Boolean(task?.fields?.Title && task.fields.Title.trim().endsWith("(CC)"));
 };
 
 const getTimeValue = (task, type) => {
   if (type === "start") {
-    return task?.StartTime || task?.Time || "";
+    const time = task?.fields?.StartTime || task?.fields?.Time || "";
+    return time ? time.slice(0, 5) : "";
   }
 
-  return task?.EndTime || "";
+  const endTime = task?.fields?.EndTime || "";
+  return endTime ? endTime.slice(0, 5) : "";
 };
 
 // Help map category labels
 const getCategoryLabel = (task) => {
-  if (!task.Title) return "Other";
-  if (task.Title.includes("[SS")) return "Campaign";
-  if (task.Title.includes("[OS")) return "One Shot";
-  if (task.Title.includes("Vacation")) return "Vacation";
-  if (task.Title.includes("BGC")) return "Board Game";
+  if (!task.fields?.Title) return "Other";
+  if (task.fields.Title.includes("[SS")) return "Campaign";
+  if (task.fields.Title.includes("[OS")) return "One Shot";
+  if (task.fields.Title.includes("Vacation")) return "Vacation";
+  if (task.fields.Title.includes("BGC")) return "Board Game";
   return "Other";
 };
 
 // Map category severity for color coding
 const getCategorySeverity = (task) => {
-  if (!task.Title) return "secondary";
-  if (task.Title.includes("[SS")) return "info"; // Blue
-  if (task.Title.includes("[OS")) return "success"; // Teal/Green
-  if (task.Title.includes("Vacation")) return "warn"; // Orange
-  if (task.Title.includes("BGC")) return "danger"; // Red/Purple
+  if (!task.fields?.Title) return "secondary";
+  if (task.fields.Title.includes("[SS")) return "info"; // Blue
+  if (task.fields.Title.includes("[OS")) return "success"; // Teal/Green
+  if (task.fields.Title.includes("Vacation")) return "warn"; // Orange
+  if (task.fields.Title.includes("BGC")) return "danger"; // Red/Purple
   return "secondary"; // Gray
 };
 </script>

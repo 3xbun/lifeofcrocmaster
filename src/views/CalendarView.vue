@@ -99,7 +99,7 @@
                 <span class="stat-label">Next Session (from today)</span>
                 <template v-if="nextSession">
                   <span class="next-session-title truncate">{{
-                    nextSession.Title
+                    nextSession.fields.Title
                   }}</span>
                 </template>
                 <template v-else>
@@ -188,6 +188,13 @@ const currentView = ref("calendar");
 const searchQuery = ref("");
 const activeFilter = ref("All");
 
+
+const TASK_URL =
+  "https://ndb.3xbun.com/api/v3/data/pgxg26j2hhnru0n/me7o0aeuwp1repl/records";
+const API_HEADERS = {
+  "xc-token": import.meta.env.VITE_NDB_API,
+};
+
 // Monthly navigation lifted to App level
 const currentDate = ref(dayjs());
 
@@ -222,61 +229,45 @@ const categoryOptions = ref([
 ]);
 
 // Fetching Data
-onMounted(() => {
-  const options = {
-    method: "GET",
-    url: "https://ndb.3xbun.com/api/v2/tables/mrsyc7z6ooyi7ad/records",
-    params: {
-      offset: "0",
-      limit: "150",
-      where: "",
-      viewId: "vwyaz6okcvlatosq",
-    },
-    headers: {
-      "xc-token": import.meta.env.VITE_NDB_API,
-    },
-  };
-
-  axios
-    .request(options)
-    .then((res) => {
-      Tasks.value = res.data.list;
-      loading.value = false;
-    })
-    .catch((err) => {
-      console.error(err);
-      error.value = true;
-      loading.value = false;
-    });
+onMounted(async () => {
+  try {
+    const res = await axios.get(TASK_URL, { headers: API_HEADERS });
+    Tasks.value = res.data.records || [];
+  } catch (err) {
+    console.error(err);
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
 });
 
 // Filter tasks to ONLY include the currently active calendar month
 const currentMonthTasks = computed(() => {
   return Tasks.value.filter((task) => {
-    if (!task.Date) return false;
-    return dayjs(task.Date).isSame(currentDate.value, "month");
+    if (!task.fields.Date) return false;
+    return dayjs(task.fields.Date).isSame(currentDate.value, "month");
   });
 });
 
 // Computed Properties for KPIs (Strictly scoped to selected month, except Next Session)
 const totalBookings = computed(() => currentMonthTasks.value.length);
 const campaignSessions = computed(
-  () => currentMonthTasks.value.filter((t) => t.Title?.includes("[SS")).length,
+  () => currentMonthTasks.value.filter((t) => t.fields.Title?.includes("[SS")).length,
 );
 const oneShots = computed(
-  () => currentMonthTasks.value.filter((t) => t.Title?.includes("[OS")).length,
+  () => currentMonthTasks.value.filter((t) => t.fields.Title?.includes("[OS")).length,
 );
 const vacationDays = computed(
   () =>
-    currentMonthTasks.value.filter((t) => t.Title?.includes("Vacation")).length,
+    currentMonthTasks.value.filter((t) => t.fields.Title?.includes("Vacation")).length,
 );
 
 // Next session is chronological from TODAY
 const nextSession = computed(() => {
   const todayStr = dayjs().format("YYYY-MM-DD");
   const upcoming = Tasks.value
-    .filter((t) => t.Date >= todayStr && !t.Title?.includes("Vacation"))
-    .sort((a, b) => a.Date.localeCompare(b.Date));
+    .filter((t) => t.fields.Date >= todayStr && !t.fields.Title?.includes("Vacation"))
+    .sort((a, b) => a.fields.Date.localeCompare(b.fields.Date));
   return upcoming.length > 0 ? upcoming[0] : null;
 });
 
@@ -284,19 +275,19 @@ const nextSession = computed(() => {
 const matchesActiveFilters = (task) => {
   const matchesSearch =
     !searchQuery.value ||
-    (task.Title &&
-      task.Title.toLowerCase().includes(searchQuery.value.toLowerCase()));
+    (task.fields.Title &&
+      task.fields.Title.toLowerCase().includes(searchQuery.value.toLowerCase()));
   if (!matchesSearch) return false;
 
   if (activeFilter.value === "All") return true;
-  if (activeFilter.value === "Campaign") return task.Title?.includes("[SS");
-  if (activeFilter.value === "OneShot") return task.Title?.includes("[OS");
-  if (activeFilter.value === "Vacation") return task.Title?.includes("Vacation");
+  if (activeFilter.value === "Campaign") return task.fields.Title?.includes("[SS");
+  if (activeFilter.value === "OneShot") return task.fields.Title?.includes("[OS");
+  if (activeFilter.value === "Vacation") return task.fields.Title?.includes("Vacation");
   if (activeFilter.value === "Other") {
     return (
-      !task.Title?.includes("[SS") &&
-      !task.Title?.includes("[OS") &&
-      !task.Title?.includes("Vacation")
+      !task.fields.Title?.includes("[SS") &&
+      !task.fields.Title?.includes("[OS") &&
+      !task.fields.Title?.includes("Vacation")
     );
   }
   return true;
@@ -316,8 +307,8 @@ const calendarTasks = computed(() => {
   );
 
   return Tasks.value.filter((task) => {
-    if (!task.Date || !matchesActiveFilters(task)) return false;
-    const taskDate = dayjs(task.Date);
+    if (!task.fields.Date || !matchesActiveFilters(task)) return false;
+    const taskDate = dayjs(task.fields.Date);
     return (
       !taskDate.isBefore(calendarStart, "day") &&
       !taskDate.isAfter(calendarEnd, "day")

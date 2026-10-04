@@ -20,11 +20,12 @@
 
         <!-- List of Mini Tasks/Bookings (Max 2 shown) -->
         <div v-if="day.tasks && day.tasks.length > 0" class="cell-tasks-list">
-          <div v-for="task in day.tasks.slice(0, 2)" :key="task.Id" :class="['mini-task-bar', getMiniTaskClass(task)]"
-            :title="`${getTaskTimeRange(task)} - ${task.Title}`">
+          <div v-for="task in day.tasks.slice(0, 2)" :key="task.fields.Id"
+            :class="['mini-task-bar', getMiniTaskClass(task)]"
+            :title="`${getTaskTimeRange(task)} - ${task.fields.Title}`">
             <span class="mini-task-time">{{ getTaskStartTime(task) }}</span>
             <span class="mini-task-title" :class="{ 'cancelled-title': isCancelledTask(task) }">
-              {{ task.Title }}
+              {{ task.fields.Title }}
             </span>
           </div>
 
@@ -75,16 +76,17 @@ const translateDay = (day) => {
 };
 
 const isCancelledTask = (task) => {
-  return Boolean(task?.Title && task.Title.trim().endsWith("(CC)"));
+  return Boolean(task?.fields?.Title && task.fields.Title.trim().endsWith("(CC)"));
 };
 
 const getTaskStartTime = (task) => {
-  return task?.StartTime || task?.Time || "";
+  const time = task?.fields?.StartTime || task?.fields?.Time || "";
+  return time ? time.slice(0, 5) : "";
 };
 
 const getTaskTimeRange = (task) => {
   const start = getTaskStartTime(task);
-  const end = task?.EndTime || "";
+  const end = task?.fields?.EndTime ? task.fields.EndTime.slice(0, 5) : "";
 
   if (start && end) return `${start} - ${end}`;
   return start || end || "";
@@ -92,11 +94,11 @@ const getTaskTimeRange = (task) => {
 
 // Style classes for mini task indicators based on category
 const getMiniTaskClass = (task) => {
-  if (!task.Title) return "mini-default";
-  if (task.Title.includes("[SS")) return "mini-campaign";
-  if (task.Title.includes("[OS")) return "mini-oneshot";
-  if (task.Title.includes("Vacation")) return "mini-vacation";
-  if (task.Title.includes("BGC")) return "mini-bgc";
+  if (!task.fields?.Title) return "mini-default";
+  if (task.fields.Title.includes("[SS")) return "mini-campaign";
+  if (task.fields.Title.includes("[OS")) return "mini-oneshot";
+  if (task.fields.Title.includes("Vacation")) return "mini-vacation";
+  if (task.fields.Title.includes("BGC")) return "mini-bgc";
   return "mini-default";
 };
 </script>

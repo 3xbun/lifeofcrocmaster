@@ -27,7 +27,7 @@
                 </span>
               </div>
               <h4 class="task-title" :class="{ 'cancelled-title': isCancelledTask(task) }">
-                {{ task.Title }}
+                {{ task.fields.Title }}
               </h4>
             </div>
           </div>
@@ -113,7 +113,7 @@ const createCalendarDay = (date, isAdjacentMonth = false) => {
   }
 
   const dateStr = date.format("YYYY-MM-DD");
-  const dayTasks = props.tasks.filter((task) => task.Date === dateStr);
+    const dayTasks = props.tasks.filter((task) => task.fields.Date === dateStr);
 
   if (dayTasks.length > 0) {
     cellClass += " has-tasks";
@@ -142,12 +142,12 @@ const dialogHeader = computed(() => {
 });
 
 const isCancelledTask = (task) => {
-  return Boolean(task?.Title && task.Title.trim().endsWith("(CC)"));
+  return Boolean(task?.fields?.Title && task.fields.Title.trim().endsWith("(CC)"));
 };
 
 const getTaskTimeRange = (task) => {
-  const start = task?.StartTime || task?.Time || "";
-  const end = task?.EndTime || "";
+  const start = task?.fields?.StartTime ? task.fields.StartTime.slice(0, 5) : task?.fields?.Time ? task.fields.Time.slice(0, 5) : "";
+  const end = task?.fields?.EndTime ? task.fields.EndTime.slice(0, 5) : "";
 
   if (start && end) return `${start} - ${end}`;
   return start || end || "";
@@ -155,20 +155,20 @@ const getTaskTimeRange = (task) => {
 
 // Helper functions for categorization styling
 const getCategoryClass = (task) => {
-  if (!task.Title) return "cat-default";
-  if (task.Title.includes("[SS")) return "cat-campaign";
-  if (task.Title.includes("[OS")) return "cat-oneshot";
-  if (task.Title.includes("Vacation")) return "cat-vacation";
-  if (task.Title.includes("BGC")) return "cat-bgc";
+  if (!task.fields?.Title) return "cat-default";
+  if (task.fields.Title.includes("[SS")) return "cat-campaign";
+  if (task.fields.Title.includes("[OS")) return "cat-oneshot";
+  if (task.fields.Title.includes("Vacation")) return "cat-vacation";
+  if (task.fields.Title.includes("BGC")) return "cat-bgc";
   return "cat-default";
 };
 
 const getCategoryLabel = (task) => {
-  if (!task.Title) return "Other";
-  if (task.Title.includes("[SS")) return "Campaign";
-  if (task.Title.includes("[OS")) return "One Shot";
-  if (task.Title.includes("Vacation")) return "Vacation";
-  if (task.Title.includes("BGC")) return "Board Game Club";
+  if (!task.fields?.Title) return "Other";
+  if (task.fields.Title.includes("[SS")) return "Campaign";
+  if (task.fields.Title.includes("[OS")) return "One Shot";
+  if (task.fields.Title.includes("Vacation")) return "Vacation";
+  if (task.fields.Title.includes("BGC")) return "Board Game Club";
   return "Other";
 };
 </script>
