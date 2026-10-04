@@ -1,0 +1,367 @@
+<template>
+  <div class="calendar-wrapper">
+    <Card class="calendar-card">
+      <template #content>
+        <!-- Calendar Grid -->
+        <CalendarGrid :days-of-week="daysOfWeek" :calendar-grid="calendarGrid" @select-day="onSelectDay" />
+      </template>
+    </Card>
+
+    <!-- Dialog for Day Details -->
+    <Dialog v-model:visible="displayDialog" modal :header="dialogHeader" :style="{ width: '90vw', maxWidth: '440px' }"
+      class="custom-dialog">
+      <template #container>
+        <div v-if="selectedDayTasks.length > 0" class="dialog-tasks-list">
+          <div v-for="task in selectedDayTasks" :key="task.Id" class="dialog-task-item">
+            <!-- Category Indicator Bar -->
+            <div class="category-indicator" :class="getCategoryClass(task)"></div>
+
+            <div class="task-info-block">
+              <div class="task-header-row">
+                <span class="task-time">
+                  <i class="fa-duotone fa-solid fa-clock"></i>
+                  {{ getTaskTimeRange(task) }}
+                </span>
+                <span class="task-badge" :class="getCategoryClass(task)">
+                  {{ getCategoryLabel(task) }}
+                </span>
+              </div>
+              <h4 class="task-title" :class="{ 'cancelled-title': isCancelledTask(task) }">
+                {{ task.Title }}
+              </h4>
+            </div>
+          </div>
+        </div>
+        <div v-else class="dialog-empty-state">
+          <i class="fa-duotone fa-solid fa-calendar empty-icon"></i>
+          <p>No schedule or bookings for this day</p>
+        </div>
+
+        <div class="dialog-footer">
+          <Button label="Close Window" icon="fa-duotone fa-solid fa-xmark" @click="displayDialog = false"
+            class="p-button-text" />
+        </div>
+      </template>
+    </Dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from "vue";
+import dayjs from "dayjs";
+
+import Card from "primevue/card";
+import Dialog from "primevue/dialog";
+import Button from "primevue/button";
+
+import CalendarGrid from "./CalendarGrid.vue";
+
+const props = defineProps({
+  tasks: {
+    type: Array,
+    required: true,
+  },
+  currentMonth: {
+    type: Object, // dayjs object passed from parent (App.vue)
+    required: true,
+  },
+});
+
+const today = dayjs();
+
+// Dialog state
+const displayDialog = ref(false);
+const selectedDay = ref(null);
+const selectedDayTasks = ref([]);
+
+const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const calendarGrid = computed(() => {
+  const firstDayOfMonth = props.currentMonth.startOf("month").day();
+  // Adjust padding since the week starts on Monday (Sunday is 0 in dayjs)
+  const paddingDays = (firstDayOfMonth + 6) % 7;
+  const daysInMonth = props.currentMonth.daysInMonth();
+  const grid = [];
+
+  // Fill the leading cells with the final days of the previous month.
+  for (let i = 0; i < paddingDays; i++) {
+    const date = props.currentMonth.startOf("month").subtract(paddingDays - i, "day");
+    grid.push(createCalendarDay(date, true));
+  }
+
+  // Populate the current month and match tasks by their actual date.
+  for (let i = 1; i <= daysInMonth; i++) {
+    const date = props.currentMonth.date(i);
+    grid.push(createCalendarDay(date));
+  }
+
+  // Complete the final week with the first days of the next month.
+  const trailingDays = (7 - (grid.length % 7)) % 7;
+  for (let i = 1; i <= trailingDays; i++) {
+    const date = props.currentMonth.endOf("month").add(i, "day");
+    grid.push(createCalendarDay(date, true));
+  }
+
+  return grid;
+});
+
+const createCalendarDay = (date, isAdjacentMonth = false) => {
+  let cellClass = isAdjacentMonth ? "day adjacent-month" : "day";
+
+  if (today.isSame(date, "day")) {
+    cellClass += " today";
+  }
+
+  const dateStr = date.format("YYYY-MM-DD");
+  const dayTasks = props.tasks.filter((task) => task.Date === dateStr);
+
+  if (dayTasks.length > 0) {
+    cellClass += " has-tasks";
+  }
+
+  return {
+    date,
+    day: date.date(),
+    class: cellClass,
+    tasks: dayTasks,
+  };
+};
+
+// Handle selecting a day to show details
+const onSelectDay = (day) => {
+  if (!day.date) return;
+  selectedDay.value = day.date;
+  selectedDayTasks.value = day.tasks;
+  displayDialog.value = true;
+};
+
+// Computed Dialog Header Title
+const dialogHeader = computed(() => {
+  if (!selectedDay.value) return "Bookings";
+  return `Bookings for ${selectedDay.value.locale("en").format("D MMMM YYYY")}`;
+});
+
+const isCancelledTask = (task) => {
+  return Boolean(task?.Title && task.Title.trim().endsWith("(CC)"));
+};
+
+const getTaskTimeRange = (task) => {
+  const start = task?.StartTime || task?.Time || "";
+  const end = task?.EndTime || "";
+
+  if (start && end) return `${start} - ${end}`;
+  return start || end || "";
+};
+
+// Helper functions for categorization styling
+const getCategoryClass = (task) => {
+  if (!task.Title) return "cat-default";
+  if (task.Title.includes("[SS")) return "cat-campaign";
+  if (task.Title.includes("[OS")) return "cat-oneshot";
+  if (task.Title.includes("Vacation")) return "cat-vacation";
+  if (task.Title.includes("BGC")) return "cat-bgc";
+  return "cat-default";
+};
+
+const getCategoryLabel = (task) => {
+  if (!task.Title) return "Other";
+  if (task.Title.includes("[SS")) return "Campaign";
+  if (task.Title.includes("[OS")) return "One Shot";
+  if (task.Title.includes("Vacation")) return "Vacation";
+  if (task.Title.includes("BGC")) return "Board Game Club";
+  return "Other";
+};
+</script>
+
+<style scoped>
+.calendar-wrapper {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.calendar-card {
+  background: var(--dark-card) !important;
+  border: 1px solid var(--dark-border) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden;
+}
+
+.calendar-card :deep(.p-card-body) {
+  padding: 0 !important;
+}
+
+/* Dialog Styling overrides */
+:deep(.custom-dialog) {
+  background: var(--dark-card) !important;
+  border: 1px solid var(--dark-border) !important;
+  border-radius: 1.25rem !important;
+}
+
+:deep(.p-dialog-header) {
+  background: var(--dark-card) !important;
+  color: var(--white) !important;
+  border-bottom: 1px solid var(--dark-border) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+:deep(.p-dialog-content) {
+  background: var(--dark-card) !important;
+  color: var(--dark-text) !important;
+  padding: 1.5rem !important;
+}
+
+:deep(.p-dialog-footer) {
+  background: var(--dark-card) !important;
+  border-top: 1px solid var(--dark-border) !important;
+  padding: 1rem 1.5rem !important;
+}
+
+/* Day Dialog List */
+.dialog-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1em;
+}
+
+.dialog-task-item {
+  display: flex;
+  background: #171717;
+  border: 1px solid var(--dark-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.dialog-task-item:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.category-indicator {
+  width: 5px;
+  flex-shrink: 0;
+}
+
+.task-info-block {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.task-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-time {
+  font-size: 0.85rem;
+  color: var(--dark-text-secondary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.task-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.task-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--white);
+  margin: 0;
+}
+
+.cancelled-title {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  opacity: 0.75;
+}
+
+/* Category Specific Styles */
+.cat-campaign {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: #3b82f6 !important;
+  border-left: 5px solid #3b82f6;
+}
+
+div.category-indicator.cat-campaign {
+  background-color: #3b82f6;
+  border: none;
+}
+
+.cat-oneshot {
+  background-color: rgba(20, 184, 166, 0.1) !important;
+  color: #14b8a6 !important;
+  border-left: 5px solid #14b8a6;
+}
+
+div.category-indicator.cat-oneshot {
+  background-color: #14b8a6;
+  border: none;
+}
+
+.cat-vacation {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: #f59e0b !important;
+  border-left: 5px solid #f59e0b;
+}
+
+div.category-indicator.cat-vacation {
+  background-color: #f59e0b;
+  border: none;
+}
+
+.cat-bgc {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+  color: #8b5cf6 !important;
+  border-left: 5px solid #8b5cf6;
+}
+
+div.category-indicator.cat-bgc {
+  background-color: #8b5cf6;
+  border: none;
+}
+
+.cat-default {
+  background-color: rgba(160, 160, 160, 0.1) !important;
+  color: var(--dark-text-secondary) !important;
+  border-left: 5px solid var(--dark-text-secondary);
+}
+
+div.category-indicator.cat-default {
+  background-color: var(--dark-text-secondary);
+  border: none;
+}
+
+/* Empty State */
+.dialog-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  color: var(--dark-text-secondary);
+  gap: 0.75rem;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  color: var(--dark-border);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5em;
+  width: 100%;
+}
+</style>

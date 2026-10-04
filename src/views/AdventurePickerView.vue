@@ -96,7 +96,7 @@
                     {{ adv.settings }}
                   </span>
                 </div>
-                <RouterLink :to="{ path: '/', query: { highlight: adv.id } }" class="result-action">
+                <RouterLink :to="{ path: '/adventures', query: { highlight: adv.id } }" class="result-action">
                   <i class="fa-duotone fa-solid fa-arrow-right"></i>
                   ดูรายละเอียด
                 </RouterLink>
@@ -109,8 +109,8 @@
       <div class="results-actions">
         <Button label="เริ่มใหม่" icon="fa-duotone fa-solid fa-rotate-left" class="p-button-outlined p-button-sm"
           @click="resetPicker" />
-        <RouterLink to="/" class="action-link">
-          <Button label="ดูทั้งหมด" icon="fa-duotone fa-solid fa-list" iconPos="right"
+        <RouterLink to="/adventures" class="action-link">
+          <Button label="ดูทั้งหมด" icon="fa-duotone fa-solid fa-list" :iconPos="right"
             class="p-button-primary p-button-sm" />
         </RouterLink>
       </div>
@@ -219,14 +219,22 @@ const attachmentUrl = (attachment) => {
     attachment?.path ||
     attachment?.url;
 
-  if (!path) return "/adventures/Generic.webp";
+  if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
   return `${NOCODB_BASE_URL}/${path.replace(/^\/+/, "")}`;
 };
 
 const coverUrlFromFields = (fields) => {
-  const cover = Array.isArray(fields.Cover) ? fields.Cover[0] : fields.Cover;
-  return attachmentUrl(cover);
+  const cover =
+    fields.Cover ||
+    fields.Image ||
+    fields.Img ||
+    fields.Picture ||
+    fields.Thumbnail ||
+    fields.cover ||
+    fields.image;
+  const attachment = Array.isArray(cover) ? cover[0] : cover;
+  return attachmentUrl(attachment);
 };
 
 const selectAnswer = (key, value) => {

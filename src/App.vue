@@ -6,25 +6,25 @@
         <img class="logo" src="/logo.png" alt="logo" />
       </div>
       <div class="header-text">
-        <h1>D&D Adventures Catalogue</h1>
+        <h1>Board Game Booking & Schedule System</h1>
         <p class="subtitle">
-          <i class="fa-duotone fa-solid fa-book-sparkles text-primary"></i>
-          Browse and pick the next adventure for your table
+          <i class="fa-duotone fa-solid fa-circle-check text-success"></i>
+          Real-time schedule data for customers
         </p>
       </div>
     </header>
 
     <!-- Navigation -->
     <nav class="main-nav">
+      <RouterLink :to="{ name: 'calendar' }" class="nav-link"
+        :class="{ 'nav-link-active': $route.name === 'calendar' }">
+        <i class="fa-duotone fa-solid fa-calendar-days"></i>
+        <span>Calendar</span>
+      </RouterLink>
       <RouterLink :to="{ name: 'adventures' }" class="nav-link"
         :class="{ 'nav-link-active': $route.name === 'adventures' }">
         <i class="fa-duotone fa-solid fa-dice-d20"></i>
-        <span>Catalogue</span>
-      </RouterLink>
-      <RouterLink :to="{ name: 'adventure-picker' }" class="nav-link"
-        :class="{ 'nav-link-active': $route.name === 'adventure-picker' }">
-        <i class="fa-duotone fa-solid fa-magic-wand-sparkles"></i>
-        <span>Picker</span>
+        <span>Adventures</span>
       </RouterLink>
     </nav>
 
@@ -79,8 +79,8 @@
   gap: 0.5rem;
 }
 
-.text-primary {
-  color: var(--primary);
+.text-success {
+  color: #10b981;
 }
 
 /* Navigation */

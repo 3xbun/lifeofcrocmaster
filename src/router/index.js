@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 
+import CalendarView from "../views/CalendarView.vue";
 import AdventuresView from "../views/AdventuresView.vue";
 import AdventurePickerView from "../views/AdventurePickerView.vue";
 
@@ -8,19 +9,20 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      name: "adventures",
-      component: AdventuresView,
+      name: "calendar",
+      component: CalendarView,
     },
     {
       path: "/adventures",
-      redirect: "/",
+      name: "adventures",
+      component: AdventuresView,
     },
     {
       path: "/adventures/random",
       name: "adventure-picker",
       component: AdventurePickerView,
     },
-    // Fallback: unknown routes go back to the catalogue
+    // Fallback: unknown routes go back to the calendar
     {
       path: "/:pathMatch(.*)*",
       redirect: "/",

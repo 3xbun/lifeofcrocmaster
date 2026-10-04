@@ -221,19 +221,14 @@ const openHighlight = (id) => {
 
 // Watch for highlight query parameter
 const route = useRoute();
-watch(
-  () => [route.query.highlight, adventures.value.length],
-  ([val, recordCount]) => {
-    if (val) {
-      if (!recordCount) return;
-      openHighlight(val);
-    } else {
-      selectedAdventure.value = null;
-      showHighlight.value = false;
-    }
-  },
-  { immediate: true },
-);
+watch(() => route.query.highlight, (val) => {
+  if (val) {
+    openHighlight(val);
+  } else {
+    selectedAdventure.value = null;
+    showHighlight.value = false;
+  }
+});
 
 // Close modal on route change (before navigation)
 watch(() => route.fullPath, () => {
@@ -364,14 +359,22 @@ const attachmentUrl = (attachment) => {
     attachment?.path ||
     attachment?.url;
 
-  if (!path) return "/adventures/Generic.webp";
+  if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
   return `${NOCODB_BASE_URL}/${path.replace(/^\/+/, "")}`;
 };
 
 const coverUrlFromFields = (fields) => {
-  const cover = Array.isArray(fields.Cover) ? fields.Cover[0] : fields.Cover;
-  return attachmentUrl(cover);
+  const cover =
+    fields.Cover ||
+    fields.Image ||
+    fields.Img ||
+    fields.Picture ||
+    fields.Thumbnail ||
+    fields.cover ||
+    fields.image;
+  const attachment = Array.isArray(cover) ? cover[0] : cover;
+  return attachmentUrl(attachment);
 };
 
 // Parse catalog records into unified format
